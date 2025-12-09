@@ -30,7 +30,6 @@ export const expect = baseExpect.extend({
       logs = apiLogger.getRecentLogs();
     }
 
-
     const hint = this.isNot ? 'not': ''
     const message = this.utils.matcherHint('shouldEqual', undefined, undefined, { isNot: this.isNot }) +
           '\n\n' +
