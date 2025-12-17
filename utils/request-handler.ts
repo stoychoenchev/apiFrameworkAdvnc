@@ -5,18 +5,21 @@ import { APILogger } from "./logger";
 export class RequestHandler {
 
     private logger: APILogger
-    private baseUrl?: string 
+    private baseUrl: string | undefined 
     private defaultBaseUrl: string 
     private apiPath: string = ''
     private queryParams: object = {}
     private apiHeaders: Record<string, string> = {}
     private apiBody: object = {}
     private request: APIRequestContext
+    private defaultAuthToken: string
+    private clearAuthFlag?: boolean
 
-     constructor(request: APIRequestContext, apiBaseUrl: string, logger: APILogger){ 
+     constructor(request: APIRequestContext, apiBaseUrl: string, logger: APILogger, authToken: string = '') { 
         this.request = request
         this.defaultBaseUrl = apiBaseUrl
         this.logger = logger
+        this.defaultAuthToken = authToken
      }
 
 
@@ -45,12 +48,18 @@ export class RequestHandler {
         return this
     }
 
+    clearAuth(){
+        this.clearAuthFlag = true
+        return this
+    }
+
     async getRequest(statusCode: number){
         const url = this.getUrl();
-        this.logger.logRequest('GET', url, this.apiHeaders)
+        this.logger.logRequest('GET', url, this.getHeaders())
         const response = await this.request.get(url, {
-            headers: this.apiHeaders
+            headers: this.getHeaders()
         })
+        this.cleanUpFields()
         const actualStatus = response.status();
         const responseJSON = await response.json();
 
@@ -63,12 +72,13 @@ export class RequestHandler {
 
     async postRequest(statusCode: number){
         const url = this.getUrl();
-        this.logger.logRequest('POST', url, this.apiHeaders, this.apiBody)
+        this.logger.logRequest('POST', url, this.getHeaders(), this.apiBody)
 
         const response = await this.request.post(url, {
-            headers: this.apiHeaders,
+            headers: this.getHeaders(),
             data: this.apiBody
         })
+        this.cleanUpFields()
 
         const actualStatus = response.status();
         const responseJSON = await response.json();
@@ -81,12 +91,12 @@ export class RequestHandler {
 
     async putRequest(statusCode: number){
         const url = this.getUrl();
-        this.logger.logRequest('PUT', url, this.apiHeaders, this.apiBody)
+        this.logger.logRequest('PUT', url, this.getHeaders(), this.apiBody)
         const response = await this.request.put(url, {
-            headers: this.apiHeaders,
+            headers: this.getHeaders(),
             data: this.apiBody
         })
-
+        this.cleanUpFields()
         const actualStatus = response.status();
         const responseJSON = await response.json();
 
@@ -98,12 +108,12 @@ export class RequestHandler {
 
     async deleteRequest(statusCode: number){
         const url = this.getUrl();
-        this.logger.logRequest('DELETE', url, this.apiHeaders)
+        this.logger.logRequest('DELETE', url, this.getHeaders())
 
         const response = await this.request.delete(url, {
-            headers: this.apiHeaders
+            headers: this.getHeaders()
         })
-
+        this.cleanUpFields()
         const actualStatus = response.status();
 
         this.logger.logResponse(actualStatus)
@@ -128,4 +138,22 @@ export class RequestHandler {
         }
     }
 }
+
+    private getHeaders(){
+        if(!this.clearAuthFlag){ 
+            this.apiHeaders['Authorization'] = this.apiHeaders['Authorization'] || this.defaultAuthToken
+        }
+
+        return this.apiHeaders;
+    }
+
+    private cleanUpFields(){
+        this.apiBody = {}
+        this.apiHeaders = {}
+        this.baseUrl = undefined
+        this.apiPath = ''
+        this.queryParams = {}
+        this.clearAuthFlag = false
+    }
+
 }

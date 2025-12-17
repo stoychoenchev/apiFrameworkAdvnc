@@ -9,6 +9,10 @@
   "description": "",
   "devDependencies": {
     "@playwright/test": "^1.57.0",
-    "@types/node": "^24.10.1"
+    "@types/node": "^24.10.1",
+    "ajv": "^8.17.1"
+  },
+  "dependencies": {
+    "genson-js": "^0.0.8"
   }
 }
